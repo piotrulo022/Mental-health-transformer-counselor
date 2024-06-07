@@ -4,7 +4,8 @@ from typing import Optional
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset, andom_split, random_split
+from torch.utils.data import DataLoader, Dataset, random_split
+
 from datasets import Dataset as DS
 
 
@@ -12,7 +13,7 @@ from datasets import Dataset as DS
 from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
 from tokenizers.trainers import WordLevelTrainer
-from tokenizers.pre_tokenizers import Whitespace
+from tokenizers.pre_tokenizers import Whitespace, WhitespaceSplit
 
 
 ###############################################################################
@@ -23,22 +24,18 @@ def yield_sentences(ds, key = 'sentence'):
         yield item[key]
 
 
-def create_tokenizer(ds: DS, key: str, tokenizer_path: Optional[str] = None) -> Tokenizer:
+def create_tokenizer(ds: DS, key: str) -> Tokenizer:
     """
     
     """
-    tkph = Path(tokenizer_path)
-    if not tkph.exists():
-        tokenizer = Tokenizer(WordLevel(unk_token="[UNK]"))
-        tokenizer.pre_tokenizer = Whitespace() # split words based on whitespaces between
-        
-        trainer = WordLevelTrainer(special_tokens = ['[UNK]', '[PAD]', '[SOS]', '[EOS]'], min_frequency = 2) 
-        
-        tokenizer.train_from_iterator(yield_sentences(ds, key), trainer = trainer)
 
-        tokenizer.save(str(tokenizer_path))
-    else: 
-        tokenizer = Tokenizer.from_file(str(tokenizer_path))
+    tokenizer = Tokenizer(WordLevel(unk_token="[UNK]"))
+    tokenizer.pre_tokenizer = WhitespaceSplit() # split words based on whitespaces between
+    
+    trainer = WordLevelTrainer(special_tokens = ['[UNK]', '[PAD]', '[SOS]', '[EOS]'], min_frequency = 2) 
+    
+    tokenizer.train_from_iterator(yield_sentences(ds, key), trainer = trainer)
+
 
     return tokenizer
 
@@ -73,38 +70,55 @@ class CompressionDataset(Dataset):
         enc_num_padding_tokens = self.src_seq_len - len(enc_input_tokens) - 2 # -2 : [SOS], [EOS]
         dec_num_padding_tokens = self.tgt_seq_len - len(dec_input_tokens) - 1 # we do not want to have [EOS]
 
-        if enc_num_padding_tokens < 0 or dec_num_padding_tokens < 0:
-            raise ValueError('Sentence is too long')
-        
-        encoder_input = torch.cat(
+        if enc_num_padding_tokens < 0:
+            enc_input_tokens = enc_input_tokens[:self.src_seq_len - 2]  # -2 for [SOS] and [EOS]
+            encoder_input = torch.cat(
+                [
+                    self.sos_token,
+                    torch.tensor(enc_input_tokens, dtype=torch.int64),
+                    self.eos_token
+                ], dim = 0
+            )
+        else:
+            encoder_input = torch.cat(
             [
                 self.sos_token,
                 torch.tensor(enc_input_tokens, dtype=torch.int64),
                 self.eos_token,
                 torch.tensor([self.pad_token] * enc_num_padding_tokens, dtype = torch.int64)
-            ]
+            ], dim = 0 
         )
 
-        decoder_input = torch.cat(
-            [
-                self.sos_token,
-                torch.tensor(dec_input_tokens, dtype = torch.int64),
-                torch.tensor([self.pad_token] * dec_num_padding_tokens, dtype = torch.int64)
-            ]
-        )
+
+        if dec_num_padding_tokens < 0:
+            dec_input_tokens = dec_input_tokens[:self.tgt_seq_len - 1]  # -1 for [SOS]
+            decoder_input = torch.cat(
+                [
+                    self.sos_token,
+                    torch.tensor(dec_input_tokens, dtype = torch.int64),
+                ], dim = 0 
+            )
+
+        else:
+            decoder_input = torch.cat(
+                [
+                    self.sos_token,
+                    torch.tensor(dec_input_tokens, dtype = torch.int64),
+                    torch.tensor([self.pad_token] * dec_num_padding_tokens, dtype = torch.int64)
+                ], dim = 0
+            )
 
         label = torch.cat(
             [
                 torch.tensor(dec_input_tokens, dtype = torch.int64),
                 self.eos_token,
                 torch.tensor([self.pad_token] * dec_num_padding_tokens, dtype = torch.int64)
-            ]
+            ], dim = 0
         )
 
         assert encoder_input.size(0) == self.src_seq_len
         assert decoder_input.size(0) == self.tgt_seq_len
         # assert label.size(0) == self.src_seq_len
-
 
         return {'encoder_input': encoder_input,
                 'decoder_input': decoder_input,
@@ -134,18 +148,18 @@ def decoder_mask(size: int) -> torch.Tensor:
 
 
 
-
-def ds_from_parquet(filename: str, train_size: float, tokenizer_src_path: Optional[str] = None, tokenizer_tgt_path: Optional[str] = None, src_seq_len: int = None, tgt_seq_len: int = None, batch_size: int = 32) -> tuple:
+def ds_from_parquet(filename: str, train_size: float, src_seq_len: int = None, tgt_seq_len: int = None, train_batch_size: int = 32, val_batch_size: int = 1) -> tuple:
 
     assert train_size > 0 and train_size < 1, "Train size can't be outside (0; 1) range "
     
-    fpath = Path(filename)
-    dataset = DS.from_parquet(fpath)
+    dataset = DS.from_parquet(filename)
     
     # build tokenizers for source and targets
-    tokenizer_src = create_tokenizer(dataset, 'sentence', tokenizer_src_path)
-    tokenizer_tgt = create_tokenizer(dataset, 'compression', tokenizer_tgt_path)
-
+    # tokenizer_src = create_tokenizer(dataset, 'sentence', tokenizer_src_path)
+    # tokenizer_tgt = create_tokenizer(dataset, 'compression', tokenizer_tgt_path)
+    # build tokenizers for source and targets
+    tokenizer_src = create_tokenizer(dataset, 'sentence')
+    tokenizer_tgt = create_tokenizer(dataset, 'compression')
     # train-val split
     train_ds_size = int(train_size * len(dataset))
     val_ds_size = len(dataset) - train_ds_size
@@ -172,7 +186,7 @@ def ds_from_parquet(filename: str, train_size: float, tokenizer_src_path: Option
             tgt_ids = tokenizer_tgt.encode(item['compression']).ids 
             tgt_len = max(tgt_len, len(tgt_ids))
 
-        print(f'Max length of target sentence:', src_len)
+        print(f'Max length of target sentence:', tgt_len)
         tgt_len += 1 # [SOS] token
     else:
         tgt_len = tgt_seq_len
@@ -181,9 +195,9 @@ def ds_from_parquet(filename: str, train_size: float, tokenizer_src_path: Option
     val_ds = CompressionDataset(val_ds, tokenizer_src, tokenizer_tgt, src_seq_len=src_len, tgt_seq_len=tgt_len)
 
 
-    train_dataloader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
-    val_dataloader = DataLoader(val_ds, batch_size=batch_size, shuffle=True)
+    train_dataloader = DataLoader(train_ds, batch_size=train_batch_size, shuffle=True)
+    val_dataloader = DataLoader(val_ds, batch_size=val_batch_size, shuffle=True)
 
     return train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt
 
-# TODO: zaimplementowac metode train do modelu i podpiac to
+
