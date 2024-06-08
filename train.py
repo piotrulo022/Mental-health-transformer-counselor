@@ -91,6 +91,7 @@ def train_model(model, num_epochs, device, train_loader, val_loader, loss_fn, op
         batch_iterator = tqdm(train_loader, desc = f'Processing epoch: {epoch:02d}')
         for batch in batch_iterator:
         # for batch in train_loader:
+            model.train()
 
             encoder_input = batch['encoder_input'].to(device) # (b, seq_len)
             decoder_input = batch['decoder_input'].to(device) # (B, seq_len)
@@ -115,9 +116,15 @@ def train_model(model, num_epochs, device, train_loader, val_loader, loss_fn, op
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
             
-
-        # validation loop
+            
+            
+            
+            
             run_validation(model, val_loader, tokenizer_tgt,  tgt_seq_len, device)
+                    
+        print(f'Epoch {epoch + 1}, Loss: {loss.item()}')
+        # validation loop
+        # run_validation(model, val_loader, tokenizer_tgt,  tgt_seq_len, device)
 
 
 
