@@ -30,9 +30,9 @@ def create_tokenizer(ds: DS, key: str) -> Tokenizer:
     """
 
     tokenizer = Tokenizer(WordLevel(unk_token="[UNK]"))
-    tokenizer.pre_tokenizer = WhitespaceSplit() # split words based on whitespaces between
+    tokenizer.pre_tokenizer = Whitespace() # split words based on whitespaces between
     
-    trainer = WordLevelTrainer(special_tokens = ['[UNK]', '[PAD]', '[SOS]', '[EOS]'], min_frequency = 2) 
+    trainer = WordLevelTrainer(special_tokens = ['[UNK]', '[PAD]', '[SOS]', '[EOS]'], min_frequency = 2, vocab_size = 50_000) 
     
     tokenizer.train_from_iterator(yield_sentences(ds, key), trainer = trainer)
 
@@ -43,6 +43,7 @@ def create_tokenizer(ds: DS, key: str) -> Tokenizer:
 class CompressionDataset(Dataset):
     def __init__(self, ds: DS, tokenizer_src, tokenizer_tgt, src_seq_len, tgt_seq_len) -> None:
         super().__init__()
+        self.ds = ds
         self.ds = ds
         self.src_seq_len = src_seq_len
         self.tgt_seq_len = tgt_seq_len
