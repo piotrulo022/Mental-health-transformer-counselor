@@ -6,8 +6,8 @@ This project is coursework for Advanced Machine Learning Methods (*pl. Zaawansow
 
 In recent years, mental health issues have become increasingly prevalent across the globe. This rise is not limited to any single demographic; rather, it affects individuals of all ages, professions, and social statuses. The World Health Organization (WHO) estimates that approximately one in four people will experience a mental health condition at some point in their lives. This statistic underscores the universality of mental health challenges and the pressing need for societal recognition and comprehensive approaches to address them.
 
-![% of teens with major depression in US](resources/readme/us_depression.png) 
 
+<img src="resources/readme/us_depression.png" width="90%" height="500">
 With the rapid advancement of artificial intelligence, AI models have emerged as powerful tools with the potential to revolutionize many fields, including mental health care. Large Language Models can be helpful for mental health care by acting as AI counselors, providing accessible and immediate support to a wide range of users. They can offer personalized interactions, educate on mental health topics, and identify early signs of distress. While not a replacement for human therapists, LLMs can supplement traditional therapy by providing continuous support and resources. Ethical use and integration into existing care systems are crucial to ensure their effectiveness and safety in addressing the mental health crisis.
 
 As we navigate the complexities of the global mental health crisis, the integration of AI into mental health care offers a promising avenue to expand access and enhance support. By leveraging the capabilities of AI, we can create more inclusive and responsive mental health systems that address the diverse needs of individuals. Ethical and thoughtful implementation of AI tools can help us move closer to a future where mental health care is accessible, personalized, and continuously available for all.
@@ -33,6 +33,9 @@ Files in this project are stored in few seperate directories:
 	- `model-eval.ipynb` - final model evaluation with human review and set of evaluation metrics.
 - `./htmls/` - notebooks described above in nicer *read-only* form.
 
+# Snippets
+
+<img src="resources/readme/snippets/wordcloud.png" width="200" height="160"></img> <img src="resources/readme/snippets/tensorboard.png"  width="200" height="160"></img> <img src="resources/readme/snippets/attention.png"  width="200" height="160"></img> <img src="resources/readme/snippets/decode_batches.png"  width="200" height="160"></img>
 # References
 
 Apart from the bibliography, this project heavily relied on two key sources without which it might never have been completed:
