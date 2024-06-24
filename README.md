@@ -1,6 +1,6 @@
 # Mental health transformer counselor
 
-This project is coursework for Advanced Machine Learning Methods (*pl. Zaawansowane metody uczenia maszybowego*) and focuses on training a LLM model for seq-to-seq task. Our objective is to implement and train model basing on *state-of-the-art* transformer architecture presented in 2017 and apply it to mental disorders problem to imitate mental health counselor.
+This project is coursework for Advanced Machine Learning Methods (*pl. Zaawansowane metody uczenia maszynowego*) and focuses on training a LLM model for seq-to-seq task. Our objective is to implement and train model basing on *state-of-the-art* transformer architecture presented in 2017 and apply it to mental disorders problem to imitate mental health counselor.
 
 # Introduction
 
