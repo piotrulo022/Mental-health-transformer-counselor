@@ -15,11 +15,11 @@ As we navigate the complexities of the global mental health crisis, the integrat
 
 The primary aim of this project is to explore the potential of LLMs to recognize and respond to nuanced patterns related to mental health, effectively emulating the role of a therapist or counselor. The project relies on state-of-the-art implementation of transformer in *Attention is all you need* (2017) paper. More specific goals of the project are:
 
-- [ ] gather and prepare dataset for mental health counseling,
+- [X] gather and prepare dataset for mental health counseling,
 
-- [ ] implement from scratch transformer model architecture according to *Attention is all you need* paper,
+- [X] implement from scratch transformer model architecture according to *Attention is all you need* paper,
 
-- [ ] train model so it will give reasonable and well structured response sentences according to the given input
+- [X] train model so it will give reasonable and well structured response sentences according to the given input
 
 
 # Project structure
